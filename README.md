@@ -3,7 +3,7 @@
 A simple reimplementation of [Day-Progress](https://sindresorhus.com/day-progress) by Sindre Sorhus (originally for macOS), showing the percentage of time remaining in the day (excluding sleep hours).
 
 <div align=center>
-  <img src="https://github.com/Somnia1337/Day-Progress/blob/main/preview.png?raw=true" width="336px">
+  <img src="https://github.com/Somnia1337/Day-Progress/blob/main/preview_v0.2.0.png?raw=true" width="664px">
 </div>
 
 This is a tray application, meaning:
