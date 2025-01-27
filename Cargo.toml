@@ -1,0 +1,11 @@
+[package]
+name = "day-progress"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4.39"
+tray-item = "0.10.0"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1.12"
