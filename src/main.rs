@@ -2,8 +2,10 @@
 
 use chrono::{Local, Timelike};
 use std::thread;
-use std::time::Duration;
 use tray_item::{IconSource, TrayItem};
+
+const WAKE: (u32, u32) = (7, 0);
+const SLEEP: (u32, u32) = (23, 0);
 
 fn main() {
     let mut tray = TrayItem::new("Day Progress", IconSource::Resource("app-icon")).unwrap();
@@ -14,37 +16,41 @@ fn main() {
     })
     .unwrap();
 
-    let wake = (7, 0);
-    let sleep = (23, 0);
-
     loop {
-        let remain = calculate_remaining_time_percentage(wake, sleep);
-        let tag = Box::leak(format!("num-{}", remain).into_boxed_str());
-        let label = format!("{}%", remain);
+        update(&mut tray);
 
-        tray.inner_mut()
-            .set_icon(IconSource::Resource(tag))
-            .unwrap();
-        tray.inner_mut().set_label(&label, 0).unwrap();
-        tray.inner_mut().set_tooltip(&label).unwrap();
-
-        thread::sleep(Duration::from_secs(60));
+        let now = Local::now();
+        let next_min = now.with_second(0).unwrap() + chrono::Duration::minutes(1);
+        let thread_sleep = (next_min - now).to_std().unwrap();
+        thread::sleep(thread_sleep);
     }
 }
 
-fn calculate_remaining_time_percentage(wake: (u32, u32), sleep: (u32, u32)) -> u32 {
-    let now = Local::now();
+fn update(tray: &mut TrayItem) {
+    let remain = calc_remain();
+    let tag = Box::leak(format!("num-{}", remain).into_boxed_str());
+    let label = format!("{}%", remain);
+
+    tray.inner_mut()
+        .set_icon(IconSource::Resource(tag))
+        .unwrap();
+    tray.inner_mut().set_label(&label, 0).unwrap();
+    tray.inner_mut().set_tooltip(&label).unwrap();
+}
+
+fn calc_remain() -> u32 {
+    let now = Local::now().with_second(0).unwrap();
     let wake_up_time = now
-        .with_hour(wake.0)
+        .with_hour(WAKE.0)
         .unwrap()
-        .with_minute(wake.1)
+        .with_minute(WAKE.1)
         .unwrap()
         .with_second(0)
         .unwrap();
     let sleep_time = now
-        .with_hour(sleep.0)
+        .with_hour(SLEEP.0)
         .unwrap()
-        .with_minute(sleep.1)
+        .with_minute(SLEEP.1)
         .unwrap()
         .with_second(0)
         .unwrap();
