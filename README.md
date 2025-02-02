@@ -9,4 +9,11 @@ A simple reimplementation of [Day-Progress](https://sindresorhus.com/day-progres
 This is a tray application, meaning:
 
 - It does not have a main window or command-line interface (CLI).
-- Configuration (your wake and sleep times) could be set in "configs.txt", which have fallbacks to 07:00 and 23:00.
+- Configuration (your wake and sleep times) could be set in `configs.txt`, which have fallbacks to 07:00 and 23:00.
+
+`configs.txt` could be written like this:
+
+```text
+07:00
+23:00
+```
