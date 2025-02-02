@@ -1,4 +1,4 @@
-# [Day-Progress](https://github.com/Somnia1337/Day-Progress) v0.2.1
+# [Day-Progress](https://github.com/Somnia1337/Day-Progress) v0.3.0
 
 A simple reimplementation of [Day-Progress](https://sindresorhus.com/day-progress) by Sindre Sorhus (originally for macOS), showing the percentage of time remaining in the day (excluding sleep hours).
 
