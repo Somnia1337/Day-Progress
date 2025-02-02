@@ -1,13 +1,19 @@
 #![windows_subsystem = "windows"]
 
 use chrono::{Local, Timelike};
+use std::fs;
+use std::str::FromStr;
 use std::thread;
 use tray_item::{IconSource, TrayItem};
 
-const WAKE: (u32, u32) = (7, 0);
-const SLEEP: (u32, u32) = (23, 0);
+type HM = (u32, u32);
+
+const WAKE: HM = (7, 0);
+const SLEEP: HM = (23, 0);
 
 fn main() {
+    let (wake_time, sleep_time) = read_configs().unwrap_or((WAKE, SLEEP));
+
     let mut tray = TrayItem::new("Day Progress", IconSource::Resource("app-icon")).unwrap();
 
     tray.add_label("").unwrap();
@@ -17,7 +23,7 @@ fn main() {
     .unwrap();
 
     loop {
-        if !update(&mut tray) {
+        if !update(&mut tray, wake_time, sleep_time) {
             break;
         }
 
@@ -37,12 +43,12 @@ fn main() {
     thread::park();
 }
 
-fn update(tray: &mut TrayItem) -> bool {
-    let remain = calc_remain();
+fn update(tray: &mut TrayItem, wake_time: HM, sleep_time: HM) -> bool {
+    let remain = calc_remain(wake_time, sleep_time);
     let tag = Box::leak(format!("num-{}", remain.0).into_boxed_str());
     let label = format!(
         "{}h {}m until {:02}:{:02}",
-        remain.1, remain.2, SLEEP.0, SLEEP.1
+        remain.1, remain.2, sleep_time.0, sleep_time.1
     );
 
     tray.inner_mut()
@@ -54,19 +60,19 @@ fn update(tray: &mut TrayItem) -> bool {
     remain.0 > 0
 }
 
-fn calc_remain() -> (u32, i64, i64) {
+fn calc_remain(wake_time: HM, sleep_time: HM) -> (u32, i64, i64) {
     let now = Local::now().with_second(0).unwrap();
     let wake_up_time = now
-        .with_hour(WAKE.0)
+        .with_hour(wake_time.0)
         .unwrap()
-        .with_minute(WAKE.1)
+        .with_minute(wake_time.1)
         .unwrap()
         .with_second(0)
         .unwrap();
     let sleep_time = now
-        .with_hour(SLEEP.0)
+        .with_hour(sleep_time.0)
         .unwrap()
-        .with_minute(SLEEP.1)
+        .with_minute(sleep_time.1)
         .unwrap()
         .with_second(0)
         .unwrap();
@@ -85,4 +91,30 @@ fn calc_remain() -> (u32, i64, i64) {
     let minute = (sleep_time - now).num_minutes() - hour * 60;
 
     (percentage, hour, minute)
+}
+
+fn read_configs() -> Result<(HM, HM), Box<dyn std::error::Error>> {
+    let config_path = "configs.txt";
+    let content = fs::read_to_string(config_path)?;
+
+    let mut lines = content.lines();
+    let wake = lines.next().ok_or("Missing wake time in config")?;
+    let sleep = lines.next().ok_or("Missing sleep time in config")?;
+
+    let wake_hm = parse_time(wake)?;
+    let sleep_hm = parse_time(sleep)?;
+
+    Ok((wake_hm, sleep_hm))
+}
+
+fn parse_time(s: &str) -> Result<HM, Box<dyn std::error::Error>> {
+    let hm: Vec<&str> = s.split(':').collect();
+    if hm.len() != 2 {
+        return Err("Invalid time format".into());
+    }
+
+    let h = u32::from_str(hm[0])?;
+    let m = u32::from_str(hm[1])?;
+
+    Ok((h, m))
 }
