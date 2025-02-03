@@ -8,11 +8,14 @@ use tray_item::{IconSource, TrayItem};
 
 type HM = (u32, u32);
 
-const WAKE: HM = (7, 0);
-const SLEEP: HM = (23, 0);
+const WAKE: HM = (8, 0);
+const SLEEP: HM = (0, 0);
 
 fn main() {
-    let (wake_time, sleep_time) = read_configs().unwrap_or((WAKE, SLEEP));
+    let (wake_time, mut sleep_time) = read_configs().unwrap_or((WAKE, SLEEP));
+    if sleep_time.0 * 60 + sleep_time.1 < wake_time.0 * 60 + wake_time.1 {
+        sleep_time.0 += 24;
+    }
 
     let mut tray = TrayItem::new("Day Progress", IconSource::Resource("app-icon")).unwrap();
 
@@ -62,23 +65,27 @@ fn update(tray: &mut TrayItem, wake_time: HM, sleep_time: HM) -> bool {
 
 fn calc_remain(wake_time: HM, sleep_time: HM) -> (u32, i64, i64) {
     let now = Local::now().with_second(0).unwrap();
-    let wake_up_time = now
+    let wake = now
         .with_hour(wake_time.0)
         .unwrap()
         .with_minute(wake_time.1)
         .unwrap()
         .with_second(0)
         .unwrap();
-    let sleep_time = now
-        .with_hour(sleep_time.0)
+    let mut sleep = now
+        .with_hour(sleep_time.0 % 24)
         .unwrap()
         .with_minute(sleep_time.1)
         .unwrap()
         .with_second(0)
         .unwrap();
 
-    let total = (sleep_time - wake_up_time).num_seconds() as f64;
-    let elapsed = (now - wake_up_time).num_seconds() as f64;
+    if sleep_time.0 >= 24 {
+        sleep = sleep + chrono::Duration::days(1);
+    }
+
+    let total = (sleep - wake).num_seconds() as f64;
+    let elapsed = (now - wake).num_seconds() as f64;
 
     let percentage = if elapsed < 0.0 {
         100
@@ -87,8 +94,8 @@ fn calc_remain(wake_time: HM, sleep_time: HM) -> (u32, i64, i64) {
     } else {
         ((total - elapsed) / total * 100.0).ceil() as u32
     };
-    let hour = (sleep_time - now).num_hours();
-    let minute = (sleep_time - now).num_minutes() - hour * 60;
+    let hour = (sleep - now).num_hours();
+    let minute = (sleep - now).num_minutes() - hour * 60;
 
     (percentage, hour, minute)
 }
@@ -116,5 +123,5 @@ fn parse_time(s: &str) -> Result<HM, Box<dyn std::error::Error>> {
     let h = u32::from_str(hm[0])?;
     let m = u32::from_str(hm[1])?;
 
-    Ok((h, m))
+    Ok((h % 24, m % 24))
 }
