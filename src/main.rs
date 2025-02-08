@@ -123,5 +123,5 @@ fn parse_time(s: &str) -> Result<HM, Box<dyn std::error::Error>> {
     let h = u32::from_str(hm[0])?;
     let m = u32::from_str(hm[1])?;
 
-    Ok((h % 24, m % 24))
+    Ok((h % 24, m))
 }
